@@ -58,7 +58,12 @@ if (!NETWORKS[network]) {
 }
 
 // Set up chain-specific cache directory
-const CACHE_DIR = path.join(os.homedir(), '.cache', 'mm-extract', network);
+const baseCacheDir = process.env.MM_CACHE_DIR || path.join(os.homedir(), '.cache', 'mm-extract');
+const CACHE_DIR = path.join(baseCacheDir, network);
+
+// Display cache location info
+debug(`Using cache directory base: ${baseCacheDir}${process.env.MM_CACHE_DIR ? ' (from MM_CACHE_DIR)' : ' (default)'}`);
+
 try {
     if (!fs.existsSync(CACHE_DIR)) {
         debug(`Creating cache directory: ${CACHE_DIR}`);
@@ -146,15 +151,21 @@ if (range.includes('-')) {
         console.error('Invalid range format');
         process.exit(1);
     }
-    
+
     start = parseInt(startStr);
-    
+
     if (endStr.toLowerCase() === 'max') {
         debug('Using maximum block number for end of range');
         // We'll set this in the async main function
         end = null;
     } else {
         end = parseInt(endStr);
+
+        // Validate that start is not greater than end
+        if (!isNaN(start) && !isNaN(end) && start > end) {
+            console.error(`Invalid range: start (${start}) must be less than or equal to end (${end})`);
+            process.exit(1);
+        }
     }
 } else {
     // Single block format
@@ -174,11 +185,6 @@ if ((start !== null && Number.isNaN(start)) || (end !== null && Number.isNaN(end
     process.exit(1);
 }
 
-if (start !== null && end !== null && start > end) {
-    console.error('Start must be less than or equal to end');
-    process.exit(1);
-}
-
 // **Step 4: Implement caching for block data**
 const memCache = new Map();
 
@@ -193,19 +199,19 @@ async function getBlock(blockNumber) {
     // Check disk cache
     const compressedCacheFile = path.join(CACHE_DIR, `block-${blockNumber}.json.zst`);
     const legacyCacheFile = path.join(CACHE_DIR, `block-${blockNumber}.json`);
-    
+
     if (cacheDir.ready) {
         // Try compressed cache first (if zstd is available)
         if (cacheDir.zstdAvailable && fs.existsSync(compressedCacheFile)) {
             try {
                 debug(`Reading compressed cached data from disk for block ${blockNumber}`);
                 const compressedData = fs.readFileSync(compressedCacheFile);
-                
+
                 // Use execSync to decompress the data
-                const decompressed = execSync('zstd -d --stdout', { 
-                    input: compressedData 
+                const decompressed = execSync('zstd -d --stdout', {
+                    input: compressedData
                 }).toString('utf8');
-                
+
                 const block = JSON.parse(decompressed, reviver);
                 memCache.set(blockNumber, block);
                 return block;
@@ -214,7 +220,7 @@ async function getBlock(blockNumber) {
                 // Try legacy cache or continue to network request
             }
         }
-        
+
         // Try legacy uncompressed cache
         if (fs.existsSync(legacyCacheFile)) {
             try {
@@ -246,14 +252,14 @@ async function getBlock(blockNumber) {
                 // Save to disk cache
                 if (cacheDir.ready) {
                     const jsonData = JSON.stringify(block, replacer);
-                    
+
                     if (cacheDir.zstdAvailable) {
                         try {
                             // Compress with zstd using execSync
-                            const compressed = execSync('zstd -3 --stdout', { 
-                                input: jsonData 
+                            const compressed = execSync('zstd -3 --stdout', {
+                                input: jsonData
                             });
-                            
+
                             fs.writeFileSync(compressedCacheFile, compressed);
                             debug(`Saved and compressed block ${blockNumber} to disk cache`);
                         } catch (writeErr) {
@@ -296,20 +302,20 @@ async function main() {
     // Resolve the "max" keyword if used
     if (start === null || end === null) {
         const latestBlock = await getLatestBlockNumber();
-        
+
         if (start === null) {
             start = latestBlock;
         }
-        
+
         if (end === null) {
             end = latestBlock;
         }
     }
-    
+
     // Ensure start and end are the same type (convert to regular numbers)
     start = Number(start);
     end = Number(end);
-    
+
     debug(`Processing ${network} blocks from ${start} to ${end}`);
     let addressCount = 0;
 
