@@ -4,6 +4,7 @@ const { Web3 } = require('web3');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { execSync } = require('child_process');
 require('dotenv').config(); // Load environment variables from .env file
 
 // Debug function that writes to stderr
@@ -74,8 +75,17 @@ try {
     fs.writeFileSync(testFile, 'test');
     fs.unlinkSync(testFile);
 
-    cacheDir.ready = true;
-    debug(`Cache directory ready: ${CACHE_DIR}`);
+    // Test if zstd is available
+    try {
+        execSync('zstd --version', { stdio: 'ignore' });
+        cacheDir.ready = true;
+        cacheDir.zstdAvailable = true;
+        debug(`Cache directory ready: ${CACHE_DIR} (with zstd compression)`);
+    } catch (error) {
+        cacheDir.ready = true;
+        cacheDir.zstdAvailable = false;
+        debug(`Cache directory ready: ${CACHE_DIR} (without zstd compression)`);
+    }
 } catch (error) {
     console.error(`Cache directory setup failed: ${error.message}`);
     console.error(`Will continue without disk caching`);
@@ -181,18 +191,41 @@ async function getBlock(blockNumber) {
     }
 
     // Check disk cache
-    const cacheFile = path.join(CACHE_DIR, `block-${blockNumber}.json`);
+    const compressedCacheFile = path.join(CACHE_DIR, `block-${blockNumber}.json.zst`);
+    const legacyCacheFile = path.join(CACHE_DIR, `block-${blockNumber}.json`);
+    
     if (cacheDir.ready) {
-        if (fs.existsSync(cacheFile)) {
+        // Try compressed cache first (if zstd is available)
+        if (cacheDir.zstdAvailable && fs.existsSync(compressedCacheFile)) {
             try {
-                debug(`Reading cached data from disk for block ${blockNumber}`);
-                const data = fs.readFileSync(cacheFile, 'utf8');
+                debug(`Reading compressed cached data from disk for block ${blockNumber}`);
+                const compressedData = fs.readFileSync(compressedCacheFile);
+                
+                // Use execSync to decompress the data
+                const decompressed = execSync('zstd -d --stdout', { 
+                    input: compressedData 
+                }).toString('utf8');
+                
+                const block = JSON.parse(decompressed, reviver);
+                memCache.set(blockNumber, block);
+                return block;
+            } catch (error) {
+                debug(`Error reading compressed cache file: ${error.message}`);
+                // Try legacy cache or continue to network request
+            }
+        }
+        
+        // Try legacy uncompressed cache
+        if (fs.existsSync(legacyCacheFile)) {
+            try {
+                debug(`Reading legacy cached data from disk for block ${blockNumber}`);
+                const data = fs.readFileSync(legacyCacheFile, 'utf8');
                 const block = JSON.parse(data, reviver);
                 memCache.set(blockNumber, block);
                 return block;
             } catch (error) {
-                debug(`Error reading cache file: ${error.message}`);
-                // Continue to fetch from network if cache read fails
+                debug(`Error reading legacy cache file: ${error.message}`);
+                // Continue to network request
             }
         }
     }
@@ -212,14 +245,35 @@ async function getBlock(blockNumber) {
 
                 // Save to disk cache
                 if (cacheDir.ready) {
-                    try {
-                        fs.writeFileSync(
-                            cacheFile,
-                            JSON.stringify(block, replacer, 2)
-                        );
-                        debug(`Saved block ${blockNumber} to disk cache`);
-                    } catch (writeErr) {
-                        debug(`Failed to write to cache: ${writeErr.message}`);
+                    const jsonData = JSON.stringify(block, replacer);
+                    
+                    if (cacheDir.zstdAvailable) {
+                        try {
+                            // Compress with zstd using execSync
+                            const compressed = execSync('zstd -3 --stdout', { 
+                                input: jsonData 
+                            });
+                            
+                            fs.writeFileSync(compressedCacheFile, compressed);
+                            debug(`Saved and compressed block ${blockNumber} to disk cache`);
+                        } catch (writeErr) {
+                            debug(`Failed to write compressed cache: ${writeErr.message}`);
+                            // Fallback to uncompressed
+                            try {
+                                fs.writeFileSync(legacyCacheFile, jsonData);
+                                debug(`Saved block ${blockNumber} to uncompressed disk cache`);
+                            } catch (fallbackErr) {
+                                debug(`Failed to write cache: ${fallbackErr.message}`);
+                            }
+                        }
+                    } else {
+                        // No zstd available, just save uncompressed
+                        try {
+                            fs.writeFileSync(legacyCacheFile, jsonData);
+                            debug(`Saved block ${blockNumber} to uncompressed disk cache`);
+                        } catch (err) {
+                            debug(`Failed to write cache: ${err.message}`);
+                        }
                     }
                 }
 
