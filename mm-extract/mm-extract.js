@@ -308,7 +308,7 @@ async function getBlock(blockNumber) {
 
                 return block;
             } else {
-                console.error(`Retrieved empty or invalid block ${blockNumber} (attempt ${attempts + 1})`);
+                console.error(`[ERROR] Retrieved empty or invalid block ${blockNumber} (attempt ${attempts + 1})`);
 
                 // If block doesn't exist (null or empty response), increment attempts and apply backoff
                 attempts++;
@@ -318,16 +318,48 @@ async function getBlock(blockNumber) {
             }
         } catch (error) {
             // Print full error information for better debugging
-            console.error(`Error fetching block ${blockNumber} (attempt ${attempts + 1}):`);
+            console.error(`[ERROR] Error fetching block ${blockNumber} (attempt ${attempts + 1}):`);
             console.error('------ ERROR DETAILS START ------');
             console.error(`Error message: ${error.message}`);
 
-            // Extract and log any response data if available
+            // Log the original request details
+            console.error('Original request:');
+            console.error(`URL: ${endpoint}`);
+            console.error(`Method: eth_getBlockByNumber`);
+            console.error(`Params: ["0x${blockNumber.toString(16)}", true]`);
+
+            // Extract and log raw response data if available
             if (error.response) {
                 console.error(`Status code: ${error.response.status}`);
                 console.error(`Response headers: ${JSON.stringify(error.response.headers)}`);
-                console.error('Response data:');
-                console.error(error.response.data);
+                console.error('Raw response data:');
+                try {
+                    console.error(JSON.stringify(error.response.data, null, 2));
+                } catch (jsonErr) {
+                    console.error('(Could not stringify response data)');
+                    console.error(error.response.data);
+                }
+            }
+
+            // If the error has a request property, log that too
+            if (error.request) {
+                console.error('Request details:');
+                try {
+                    console.error(JSON.stringify(error.request, null, 2));
+                } catch (jsonErr) {
+                    console.error('(Could not stringify request details)');
+                    console.error(error.request);
+                }
+            }
+
+            // For Web3 specific error format
+            if (error.code) {
+                console.error(`Error code: ${error.code}`);
+            }
+
+            if (error.data) {
+                console.error('Error data:');
+                console.error(error.data);
             }
 
             // Log full error stack trace for debugging
@@ -339,6 +371,17 @@ async function getBlock(blockNumber) {
                 error.message.includes('invalid json response')) {
                 console.error(`Warning: The RPC endpoint for ${network} returned a non-JSON response.`);
                 console.error('This often happens when the block doesn\'t exist or the network is experiencing issues.');
+
+                // Try to extract the raw HTML response
+                if (error.message.includes('at position 0')) {
+                    try {
+                        const rawResponse = error.message.split('reason: ')[1];
+                        console.error('Raw non-JSON response:');
+                        console.error(rawResponse);
+                    } catch (e) {
+                        // Unable to extract raw response
+                    }
+                }
             }
 
             // Implement exponential backoff with longer delays
