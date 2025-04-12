@@ -102,34 +102,6 @@ function reviver(key, value) {
     return value;
 }
 
-// Check if it's a range or single block
-let start, end;
-if (range.includes('-')) {
-    // Range format
-    const [startStr, endStr] = range.split('-');
-    if (!startStr || !endStr) {
-        console.error('Invalid range format');
-        process.exit(1);
-    }
-    start = parseInt(startStr);
-    end = parseInt(endStr);
-} else {
-    // Single block format
-    start = parseInt(range);
-    end = start;
-}
-
-if (Number.isNaN(start) || Number.isNaN(end)) {
-    console.error('Block numbers must be integers');
-    process.exit(1);
-}
-if (start > end) {
-    console.error('Start must be less than or equal to end');
-    process.exit(1);
-}
-
-debug(`Processing ${network} blocks from ${start} to ${end}`);
-
 // **Step 2: Load API key from .env file**
 const MM_API_KEY = process.env.MM_API_KEY;
 if (!MM_API_KEY) {
@@ -141,6 +113,61 @@ if (!MM_API_KEY) {
 const endpoint = NETWORKS[network] + MM_API_KEY;
 const web3 = new Web3(endpoint);
 debug(`Connected to ${network} endpoint: ${NETWORKS[network]}${MM_API_KEY.substring(0, 3)}...`);
+
+// Helper function to get the latest block number
+async function getLatestBlockNumber() {
+    try {
+        const blockNumber = await web3.eth.getBlockNumber();
+        debug(`Latest block number for ${network}: ${blockNumber}`);
+        return blockNumber;
+    } catch (error) {
+        console.error(`Error fetching latest block number: ${error.message}`);
+        process.exit(1);
+    }
+}
+
+// Parse block range, handling "max" keyword for the end block
+let start = null, end = null;
+
+if (range.includes('-')) {
+    // Range format
+    const [startStr, endStr] = range.split('-');
+    if (!startStr || !endStr) {
+        console.error('Invalid range format');
+        process.exit(1);
+    }
+    
+    start = parseInt(startStr);
+    
+    if (endStr.toLowerCase() === 'max') {
+        debug('Using maximum block number for end of range');
+        // We'll set this in the async main function
+        end = null;
+    } else {
+        end = parseInt(endStr);
+    }
+} else {
+    // Single block format
+    if (range.toLowerCase() === 'max') {
+        debug('Using maximum block number');
+        // We'll set this in the async main function
+        start = null;
+        end = null;
+    } else {
+        start = parseInt(range);
+        end = start;
+    }
+}
+
+if ((start !== null && Number.isNaN(start)) || (end !== null && Number.isNaN(end))) {
+    console.error('Block numbers must be integers or "max"');
+    process.exit(1);
+}
+
+if (start !== null && end !== null && start > end) {
+    console.error('Start must be less than or equal to end');
+    process.exit(1);
+}
 
 // **Step 4: Implement caching for block data**
 const memCache = new Map();
@@ -212,7 +239,24 @@ async function getBlock(blockNumber) {
 
 // **Step 6: Main function to process block range and extract addresses**
 async function main() {
-    debug(`Starting to process ${end - start + 1} blocks on ${network}`);
+    // Resolve the "max" keyword if used
+    if (start === null || end === null) {
+        const latestBlock = await getLatestBlockNumber();
+        
+        if (start === null) {
+            start = latestBlock;
+        }
+        
+        if (end === null) {
+            end = latestBlock;
+        }
+    }
+    
+    // Ensure start and end are the same type (convert to regular numbers)
+    start = Number(start);
+    end = Number(end);
+    
+    debug(`Processing ${network} blocks from ${start} to ${end}`);
     let addressCount = 0;
 
     for (let i = start; i <= end; i++) {
