@@ -196,9 +196,30 @@ async function getBlock(blockNumber) {
         return memCache.get(blockNumber);
     }
 
-    // Check disk cache
-    const compressedCacheFile = path.join(CACHE_DIR, `block-${blockNumber}.json.zst`);
-    const legacyCacheFile = path.join(CACHE_DIR, `block-${blockNumber}.json`);
+    // Get sharded directory path based on block number (by millions)
+    const getShardedPath = (blockNum) => {
+        // Determine shard number - blocks <1M go to shard 0, 1M-2M to shard 1, etc.
+        const shardNumber = Math.floor(blockNum / 1000000);
+        const shardDir = path.join(CACHE_DIR, shardNumber.toString());
+        
+        // Ensure the directory exists
+        if (!fs.existsSync(shardDir)) {
+            try {
+                fs.mkdirSync(shardDir, { recursive: true });
+            } catch (err) {
+                debug(`Error creating shard directory ${shardDir}: ${err.message}`);
+                // Continue anyway, the write will fail later if necessary
+            }
+        }
+        
+        return {
+            compressed: path.join(shardDir, `block-${blockNum}.json.zst`),
+            legacy: path.join(shardDir, `block-${blockNum}.json`)
+        };
+    };
+
+    // Get file paths for this block
+    const { compressed: compressedCacheFile, legacy: legacyCacheFile } = getShardedPath(blockNumber);
 
     if (cacheDir.ready) {
         // Try compressed cache first (if zstd is available)
@@ -252,6 +273,8 @@ async function getBlock(blockNumber) {
                 // Save to disk cache
                 if (cacheDir.ready) {
                     const jsonData = JSON.stringify(block, replacer);
+                    // Get sharded paths again to ensure we're using the correct paths
+                    const { compressed: compressedCacheFile, legacy: legacyCacheFile } = getShardedPath(blockNumber);
 
                     if (cacheDir.zstdAvailable) {
                         try {
