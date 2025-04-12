@@ -136,7 +136,8 @@ async function getLatestBlockNumber() {
         debug(`Latest block number for ${network}: ${blockNumber}`);
         return blockNumber;
     } catch (error) {
-        console.error(`Error fetching latest block number: ${error.message}`);
+        console.error(`Error fetching latest block number: ${error.message || 'Unknown error'}`);
+        console.error('Full error details:', error);
         process.exit(1);
     }
 }
@@ -400,9 +401,8 @@ async function getBlock(blockNumber) {
 // **Step 6: Main function to process block range and extract addresses**
 async function main() {
     // Resolve the "max" keyword if used
+    const latestBlock = await getLatestBlockNumber();
     if (start === null || end === null) {
-        const latestBlock = await getLatestBlockNumber();
-
         if (start === null) {
             start = latestBlock;
         }
@@ -410,6 +410,18 @@ async function main() {
         if (end === null) {
             end = latestBlock;
         }
+    }
+
+    // Ensure start range does not exceed the latest block
+    if (start > latestBlock) {
+        console.warn(`[WARNING] Start block (${end}) exceeds the latest block (${latestBlock}). Adjusting start block to ${latestBlock}.`);
+        start = latestBlock;
+    }
+
+    // Ensure end range does not exceed the latest block
+    if (end > latestBlock) {
+        console.warn(`[WARNING] End block (${end}) exceeds the latest block (${latestBlock}). Adjusting end block to ${latestBlock}.`);
+        end = latestBlock;
     }
 
     // Ensure start and end are the same type (convert to regular numbers)
