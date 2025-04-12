@@ -201,7 +201,7 @@ async function getBlock(blockNumber) {
         // Determine shard number - blocks <1M go to shard 0, 1M-2M to shard 1, etc.
         const shardNumber = Math.floor(blockNum / 1000000);
         const shardDir = path.join(CACHE_DIR, shardNumber.toString());
-        
+
         // Ensure the directory exists
         if (!fs.existsSync(shardDir)) {
             try {
@@ -211,7 +211,7 @@ async function getBlock(blockNumber) {
                 // Continue anyway, the write will fail later if necessary
             }
         }
-        
+
         return {
             compressed: path.join(shardDir, `block-${blockNum}.json.zst`),
             legacy: path.join(shardDir, `block-${blockNum}.json`)
@@ -308,15 +308,49 @@ async function getBlock(blockNumber) {
 
                 return block;
             } else {
-                console.error(`Retrieved empty or invalid block ${blockNumber}`);
+                console.error(`Retrieved empty or invalid block ${blockNumber} (attempt ${attempts + 1})`);
+
+                // If block doesn't exist (null or empty response), increment attempts and apply backoff
+                attempts++;
+                const delay = Math.min(30000, 1000 * Math.pow(2, attempts));
+                debug(`Retrying in ${delay / 1000} seconds...`);
+                await new Promise(r => setTimeout(r, delay));
             }
         } catch (error) {
-            console.error(`Error fetching block ${blockNumber} (attempt ${attempts + 1}): ${error.message}`);
-            await new Promise(r => setTimeout(r, 1000 * (attempts + 1)));
+            // Print full error information for better debugging
+            console.error(`Error fetching block ${blockNumber} (attempt ${attempts + 1}):`);
+            console.error('------ ERROR DETAILS START ------');
+            console.error(`Error message: ${error.message}`);
+
+            // Extract and log any response data if available
+            if (error.response) {
+                console.error(`Status code: ${error.response.status}`);
+                console.error(`Response headers: ${JSON.stringify(error.response.headers)}`);
+                console.error('Response data:');
+                console.error(error.response.data);
+            }
+
+            // Log full error stack trace for debugging
+            console.error(`Stack trace: ${error.stack}`);
+            console.error('------ ERROR DETAILS END ------');
+
+            // Handle Non-JSON responses more specifically
+            if (error.message.includes('Unexpected token') ||
+                error.message.includes('invalid json response')) {
+                console.error(`Warning: The RPC endpoint for ${network} returned a non-JSON response.`);
+                console.error('This often happens when the block doesn\'t exist or the network is experiencing issues.');
+            }
+
+            // Implement exponential backoff with longer delays
+            const delay = Math.min(30000, 1000 * Math.pow(2, attempts));
+            debug(`Retrying in ${delay / 1000} seconds...`);
+            await new Promise(r => setTimeout(r, delay));
             attempts++;
         }
     }
-    console.error(`Failed to fetch block ${blockNumber} after 3 attempts.`);
+
+    // After 3 attempts of retrieving an empty block, give up and return null
+    console.error(`Failed to fetch valid block ${blockNumber} after 3 attempts.`);
     return null;
 }
 
