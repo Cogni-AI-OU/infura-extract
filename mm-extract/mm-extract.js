@@ -320,52 +320,19 @@ async function getBlock(blockNumber) {
         } catch (error) {
             // Print full error information for better debugging
             console.error(`[ERROR] Error fetching block ${blockNumber} (attempt ${attempts + 1}):`);
-            console.error('------ ERROR DETAILS START ------');
-            console.error(`Error message: ${error.message}`);
+            console.error(`[ERROR] Error: ${JSON.stringify(error.toJSON ? error.toJSON() : error, null, 2)}`);
 
-            // Log the original request details
-            console.error('Original request:');
-            console.error(`URL: ${endpoint}`);
-            console.error(`Method: eth_getBlockByNumber`);
-            console.error(`Params: ["0x${blockNumber.toString(16)}", true]`);
+            // Check for rate limiting errors (429 or 529 status codes)
+            if (error.statusCode === 429 || error.statusCode === 529) {
+                console.error(`[ERROR] Error message: Too Many Requests - Rate limit exceeded for ${network}`);
 
-            // Extract and log raw response data if available
-            if (error.response) {
-                console.error(`Status code: ${error.response.status}`);
-                console.error(`Response headers: ${JSON.stringify(error.response.headers)}`);
-                console.error('Raw response data:');
-                try {
-                    console.error(JSON.stringify(error.response.data, null, 2));
-                } catch (jsonErr) {
-                    console.error('(Could not stringify response data)');
-                    console.error(error.response.data);
-                }
+                // Implement a longer backoff for rate limit errors
+                const rateLimitDelay = Math.min(60000, 5000 * Math.pow(2, attempts));
+                debug(`Rate limited. Waiting ${rateLimitDelay / 1000} seconds before retrying...`);
+                await new Promise(r => setTimeout(r, rateLimitDelay));
             }
-
-            // If the error has a request property, log that too
-            if (error.request) {
-                console.error('Request details:');
-                try {
-                    console.error(JSON.stringify(error.request, null, 2));
-                } catch (jsonErr) {
-                    console.error('(Could not stringify request details)');
-                    console.error(error.request);
-                }
-            }
-
-            // For Web3 specific error format
-            if (error.code) {
-                console.error(`Error code: ${error.code}`);
-            }
-
-            if (error.data) {
-                console.error('Error data:');
-                console.error(error.data);
-            }
-
             // Log full error stack trace for debugging
-            console.error(`Stack trace: ${error.stack}`);
-            console.error('------ ERROR DETAILS END ------');
+            console.error(`[ERROR] Stack trace: ${error.stack}`);
 
             // Handle Non-JSON responses more specifically
             if (error.message.includes('Unexpected token') ||
