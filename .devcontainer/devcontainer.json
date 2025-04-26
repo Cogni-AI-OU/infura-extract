@@ -12,6 +12,7 @@
         "GitHub.copilot",
         "elagil.pre-commit-helper",
         "esbenp.prettier-vscode",
+        "foxundermoon.shell-format",
         "formulahendry.code-runner",
         "formulahendry.code-runner-copilot",
         "github.vscode-github-actions",
