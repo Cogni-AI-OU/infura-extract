@@ -1,25 +1,29 @@
 {
-    "categories": [
-        "Blockchain",
-        "Web3"
-    ],
-    "dependencies": {
-        "@metamask/sdk": "^0.32.1",
-        "dotenv": "^16.5.0",
-        "node-zstandard": "^1.2.4",
-        "qr": "^0.4.2",
-        "web3": "^4.16.0"
-    },
-    "description": "Extracts addresses from blockchain blocks using Infura API key from the MetaMask SDK.",
-    "devDependencies": {
-        "pretty-quick": "^4.1.1"
-    },
-    "displayName": "Infura extract",
-    "languageName": "JavaScript",
-    "name": "infura-extract",
-    "scripts": {
-        "prettier": "prettier --write .",
-        "pretty-quick": "pretty-quick --staged"
-    },
-    "version": "1.0.0"
+  "categories": [
+    "Blockchain",
+    "Web3"
+  ],
+  "dependencies": {
+    "@metamask/sdk": "^0.32.1",
+    "dotenv": "^16.5.0",
+    "node-zstandard": "^1.2.4",
+    "qr": "^0.4.2",
+    "web3": "^4.16.0"
+  },
+  "description": "Extracts addresses from blockchain blocks using Infura API key from the MetaMask SDK.",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "prettier": "^3.5.3",
+    "pretty-quick": "^4.1.1"
+  },
+  "displayName": "Infura extract",
+  "languageName": "JavaScript",
+  "name": "infura-extract",
+  "scripts": {
+    "pre-commit": "npm run pretty-quick",
+    "prepare": "husky",
+    "prettier": "prettier --write .",
+    "pretty-quick": "pretty-quick --staged"
+  },
+  "version": "1.0.0"
 }
