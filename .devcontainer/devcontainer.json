@@ -4,27 +4,39 @@
   "name": "Ubuntu",
   // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "image": "mcr.microsoft.com/devcontainers/base:focal",
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": {}
-  },
+
   "customizations": {
     "vscode": {
       "extensions": [
-        "swellaby.node-pack",
+        "DavidAnson.vscode-markdownlint",
         "GitHub.copilot",
-        "esbenp.prettier-vscode"
+        "elagil.pre-commit-helper",
+        "esbenp.prettier-vscode",
+        "formulahendry.code-runner",
+        "formulahendry.code-runner-copilot",
+        "github.vscode-github-actions",
+        "ms-python.python",
+        "sourcery.sourcery",
+        "swellaby.node-pack",
+        "vscodevim.vim"
       ]
     }
-  }
+  },
 
   // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {},
+  "features": {
+      "ghcr.io/devcontainers-extra/features/pipx-package:1": {},
+      "ghcr.io/devcontainers/features/node:1": {},
+      "ghcr.io/devcontainers/features/python:1": {},
+      "ghcr.io/guiyomh/features/vim:0": {},
+      "ghcr.io/jungaretti/features/ripgrep:1": {}
+  },
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "uname -a",
+  "postCreateCommand": "pip install -r .devcontainer/requirements.txt && pre-commit install",
 
   // Configure tool-specific properties.
   // "customizations": {},
