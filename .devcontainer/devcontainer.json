@@ -11,7 +11,8 @@
     "vscode": {
       "extensions": [
         "swellaby.node-pack",
-        "GitHub.copilot"
+        "GitHub.copilot",
+        "esbenp.prettier-vscode"
       ]
     }
   }
