@@ -18,10 +18,8 @@
     "languageName": "JavaScript",
     "name": "infura-extract",
     "scripts": {
-        "lint": "eslint .",
         "prettier": "prettier --write .",
-        "pretty-quick": "pretty-quick --staged",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "pretty-quick": "pretty-quick --staged"
     },
     "version": "1.0.0"
 }
