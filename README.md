@@ -29,6 +29,7 @@ Clone the repository and install dependencies:
 git clone <repository-url>
 cd infura-extract
 npm install
+npm link
 ```
 
 ## Configuration
@@ -41,11 +42,31 @@ MM_API_KEY=your_infura_api_key_here
 
 ## Usage
 
-Run the script with the following command format:
-
-```bash
+```console
 node infura-extract.js <network> <block-range>
 ```
+
+Or:
+
+```console
+npx infura-extract
+```
+
+On Linux, you can also use the following shell wrapper script:
+
+```console
+./infura-extract.sh
+```
+
+If you've linked the package locally, you can just run:
+
+````console
+
+Run the script with the following command:
+
+```console
+infura-extract
+````
 
 ### Parameters
 
@@ -87,6 +108,23 @@ address per line. Debug and error messages go to stderr.
 
 The tool maintains a cache at `~/.cache/infura-extract/<network>/` to avoid
 redundant API calls. Each block is stored as a separate JSON file.
+
+## Development
+
+### Pre-commit
+
+This project uses [pre-commit](https://pre-commit.com/) to run checks and manage Git hooks.
+Configuration is available in [`.pre-commit-config.yaml`](./.pre-commit-config.yaml).
+
+### Prettier
+
+This project uses [Prettier](https://prettier.io/) for code formatting. To reformat all files, run:
+
+```bash
+npm run prettier
+```
+
+Configuration can be found in [`.prettierrc`](./.prettierrc).
 
 ## Dependencies
 
