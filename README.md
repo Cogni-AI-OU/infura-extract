@@ -80,25 +80,25 @@ infura-extract
 Extract addresses from a single block on Ethereum:
 
 ```bash
-node infura-extract.js ethereum 17000000
+./infura-extract.js ethereum 17000000
 ```
 
 Extract addresses from a range of blocks on Base:
 
 ```bash
-node infura-extract.js base 1000-2000
+./infura-extract.js base 1000-2000
 ```
 
 Extract addresses from the latest block on Polygon:
 
 ```bash
-node infura-extract.js polygon max
+./infura-extract.js polygon max
 ```
 
 Extract addresses from a range ending at the latest block on Arbitrum:
 
 ```bash
-node infura-extract.js arbitrum 10000-max
+./infura-extract.js arbitrum 10000-max
 ```
 
 ## Output
