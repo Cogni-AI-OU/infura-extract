@@ -1,7 +1,10 @@
 {
+  "author": "kenorb",
+  "bin": {
+    "infura-extract": "./infura-extract.js"
+  },
   "categories": [
-    "Blockchain",
-    "Web3"
+    "Other"
   ],
   "dependencies": {
     "@metamask/sdk": "^0.32.1",
@@ -19,7 +22,9 @@
   "displayName": "Infura extract",
   "languageName": "JavaScript",
   "name": "infura-extract",
+  "repository": "Cogni-AI-OU/infura-extract",
   "scripts": {
+    "lint": "npm run prettier",
     "pre-commit": "npm run pretty-quick",
     "prepare": "husky",
     "prettier": "prettier --write .",
