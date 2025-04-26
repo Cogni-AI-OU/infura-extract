@@ -1,6 +1,5 @@
 ---
 repos:
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -22,7 +21,7 @@ repos:
     rev: 3.0.0
     hooks:
       - id: forbid-binary
-      - id: git-check     # Configure in .gitattributes
+      - id: git-check # Configure in .gitattributes
       - id: require-ascii
       - id: script-must-have-extension
 
