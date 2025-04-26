@@ -41,6 +41,16 @@ const cacheDir = {
 
 // **Step 1: Parse command-line arguments for network and block range**
 const argv = process.argv
+
+// Add -h/--help parameters
+if (argv.includes('-h') || argv.includes('--help')) {
+  console.log(
+    `Usage: node infura-extract.js <network> <start-end> or <network> <single-block>`
+  )
+  console.log('Supported networks: ' + Object.keys(NETWORKS).join(', '))
+  process.exit(0)
+}
+
 if (argv.length != 4) {
   console.error(
     'Usage: node infura-extract.js <network> <start-end> or <network> <single-block>'
