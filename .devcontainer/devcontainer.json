@@ -19,7 +19,8 @@
         "ms-python.python",
         "sourcery.sourcery",
         "swellaby.node-pack",
-        "vscodevim.vim"
+        "vscodevim.vim",
+        "yzhang.markdown-all-in-one"
       ]
     }
   },
