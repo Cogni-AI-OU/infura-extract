@@ -227,11 +227,18 @@ async function getBlock(blockNumber) {
     return memCache.get(blockNumber)
   }
 
-  // Get sharded directory path based on block number (by millions)
+  // Get sharded directory path based on block number (by millions and 100k)
   const getShardedPath = (blockNum) => {
-    // Determine shard number - blocks <1M go to shard 0, 1M-2M to shard 1, etc.
-    const shardNumber = Math.floor(blockNum / 1000000)
-    const shardDir = path.join(CACHE_DIR, shardNumber.toString())
+    // Determine shard numbers
+    const millionShard = Math.floor(blockNum / 1000000)
+    const hundredKShard = Math.floor((blockNum % 1000000) / 100000)
+
+    // Compose shard directory: <CACHE_DIR>/<millionShard>/<hundredKShard>
+    const shardDir = path.join(
+      CACHE_DIR,
+      millionShard.toString(),
+      hundredKShard.toString()
+    )
 
     // Ensure the directory exists
     if (!fs.existsSync(shardDir)) {
