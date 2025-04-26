@@ -35,7 +35,7 @@ npm install
 
 Create a `.env` file in the project root with your Infura API key:
 
-```
+```console
 MM_API_KEY=your_infura_api_key_here
 ```
 
@@ -55,32 +55,38 @@ node infura-extract.js <network> <block-range>
 ### Examples
 
 Extract addresses from a single block on Ethereum:
+
 ```bash
 node infura-extract.js ethereum 17000000
 ```
 
 Extract addresses from a range of blocks on Base:
+
 ```bash
 node infura-extract.js base 1000-2000
 ```
 
 Extract addresses from the latest block on Polygon:
+
 ```bash
 node infura-extract.js polygon max
 ```
 
 Extract addresses from a range ending at the latest block on Arbitrum:
+
 ```bash
 node infura-extract.js arbitrum 10000-max
 ```
 
 ## Output
 
-The script outputs Ethereum addresses from block transactions to stdout, one address per line. Debug and error messages go to stderr.
+The script outputs Ethereum addresses from block transactions to stdout, one
+address per line. Debug and error messages go to stderr.
 
 ## Caching
 
-The tool maintains a cache at `~/.cache/infura-extract/<network>/` to avoid redundant API calls. Each block is stored as a separate JSON file.
+The tool maintains a cache at `~/.cache/infura-extract/<network>/` to avoid
+redundant API calls. Each block is stored as a separate JSON file.
 
 ## Dependencies
 
