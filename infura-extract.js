@@ -39,33 +39,40 @@ const cacheDir = {
   ready: false,
 }
 
-// **Step 1: Parse command-line arguments for network and block range**
+// **Step 1: Parse command-line arguments for subcommand, network, and block range**
 const argv = process.argv
 
 // Add -h/--help parameters
 if (argv.includes('-h') || argv.includes('--help')) {
   console.log(
-    `Usage: node infura-extract.js <network> <start-end> or <network> <single-block>`
+    `Usage: node infura-extract.js <network> blocks <start-end> | <single-block>\n` +
+      'Supported networks: ' +
+      Object.keys(NETWORKS).join(', ')
   )
-  console.log('Supported networks: ' + Object.keys(NETWORKS).join(', '))
   process.exit(0)
 }
 
-if (argv.length != 4) {
+if (argv.length !== 5) {
   console.error(
-    'Usage: node infura-extract.js <network> <start-end> or <network> <single-block>'
+    'Usage: node infura-extract.js <network> blocks <start-end> | <single-block>'
   )
   console.error('Supported networks: ' + Object.keys(NETWORKS).join(', '))
   process.exit(1)
 }
 
 const network = argv[2].toLowerCase()
-const range = argv[3]
+const subcommand = argv[3]
+const range = argv[4]
 
-// Validate network
 if (!NETWORKS[network]) {
   console.error(`Unsupported network: ${network}`)
   console.error('Supported networks: ' + Object.keys(NETWORKS).join(', '))
+  process.exit(1)
+}
+
+if (subcommand !== 'blocks') {
+  console.error(`Unsupported subcommand: ${subcommand}`)
+  console.error('Supported subcommands: blocks')
   process.exit(1)
 }
 

@@ -43,36 +43,37 @@ MM_API_KEY=your_infura_api_key_here
 ## Usage
 
 ```console
-node infura-extract.js <network> <block-range>
+node infura-extract.js <network> blocks <block-range>
 ```
 
 Or:
 
 ```console
-npx infura-extract
+npx infura-extract <network> blocks <block-range>
 ```
 
 On Linux, you can also use the following shell wrapper script:
 
 ```console
-./infura-extract.sh
+./infura-extract.sh <network> blocks <block-range>
 ```
 
 or call the file directly by:
 
 ```console
-./infura-extract.js
+./infura-extract.js <network> blocks <block-range>
 ```
 
 If you've linked the package locally via `npm link`, you can run:
 
 ```console
-infura-extract
+infura-extract <network> blocks <block-range>
 ```
 
 ### Parameters
 
 - `<network>`: The blockchain network to query (ethereum, base, polygon, etc.)
+- `blocks`: Subcommand to extract addresses from blocks
 - `<block-range>`: A single block number, a range of blocks (e.g., "1000-2000"), or use "max" for the latest block
 
 ### Examples
@@ -80,25 +81,25 @@ infura-extract
 Extract addresses from a single block on Ethereum:
 
 ```bash
-./infura-extract.js ethereum 17000000
+./infura-extract.js ethereum blocks 17000000
 ```
 
 Extract addresses from a range of blocks on Base:
 
 ```bash
-./infura-extract.js base 1000-2000
+./infura-extract.js base blocks 1000-2000
 ```
 
 Extract addresses from the latest block on Polygon:
 
 ```bash
-./infura-extract.js polygon max
+./infura-extract.js polygon blocks max
 ```
 
 Extract addresses from a range ending at the latest block on Arbitrum:
 
 ```bash
-./infura-extract.js arbitrum 10000-max
+./infura-extract.js arbitrum blocks 10000-max
 ```
 
 ## Output
