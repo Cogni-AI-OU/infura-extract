@@ -5,5 +5,8 @@
     "node-zstandard": "^1.2.4",
     "qr": "^0.4.2",
     "web3": "^4.16.0"
+  },
+  "devDependencies": {
+    "pretty-quick": "^4.1.1"
   }
 }
