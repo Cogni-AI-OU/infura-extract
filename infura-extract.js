@@ -168,6 +168,12 @@ async function getLatestBlockNumber() {
     console.error(
       `Error fetching latest block number: ${error.message || 'Unknown error'}`
     )
+    // Check for rate limiting errors (429 or 529 status codes)
+    if (error.statusCode === 429 || error.statusCode === 529) {
+      console.error(
+        `[ERROR] Error message: Too Many Requests - Rate limit exceeded for ${network}`
+      )
+    }
     console.error('Full error details:', error)
     process.exit(1)
   }
