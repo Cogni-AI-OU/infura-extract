@@ -58,15 +58,17 @@ On Linux, you can also use the following shell wrapper script:
 ./infura-extract.sh
 ```
 
-If you've linked the package locally, you can just run:
+or call the file directly by:
 
-````console
+```console
+./infura-extract.js
+```
 
-Run the script with the following command:
+If you've linked the package locally via `npm link`, you can run:
 
 ```console
 infura-extract
-````
+```
 
 ### Parameters
 

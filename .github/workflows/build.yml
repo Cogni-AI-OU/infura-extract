@@ -30,4 +30,5 @@ jobs:
       - run: npm link
       - run: node infura-extract.js --help
       - run: npx infura-extract --help
+      - run: ./infura-extract.js --help
       - run: ./infura-extract.sh --help
