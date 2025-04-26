@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "npm",
+            "script": "pretty-quick",
+            "problemMatcher": [],
+            "label": "npm: pretty-quick",
+            "detail": "pretty-quick --staged",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
