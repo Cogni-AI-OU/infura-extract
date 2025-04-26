@@ -9,9 +9,9 @@
                 "ethereum",
                 "12345678"
             ],
-            "cwd": "${workspaceFolder}/mm-extract",
-            "name": "Launch mm-extract",
-            "program": "${workspaceFolder}/mm-extract/mm-extract.js",
+            "cwd": "${workspaceFolder}/infura-extract",
+            "name": "Launch infura-extract",
+            "program": "${workspaceFolder}/infura-extract/infura-extract.js",
             "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"

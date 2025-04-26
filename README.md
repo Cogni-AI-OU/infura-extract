@@ -27,7 +27,7 @@ Clone the repository and install dependencies:
 
 ```bash
 git clone <repository-url>
-cd mm-extract
+cd infura-extract
 npm install
 ```
 
@@ -44,7 +44,7 @@ MM_API_KEY=your_infura_api_key_here
 Run the script with the following command format:
 
 ```bash
-node mm-extract.js <network> <block-range>
+node infura-extract.js <network> <block-range>
 ```
 
 ### Parameters
@@ -56,22 +56,22 @@ node mm-extract.js <network> <block-range>
 
 Extract addresses from a single block on Ethereum:
 ```bash
-node mm-extract.js ethereum 17000000
+node infura-extract.js ethereum 17000000
 ```
 
 Extract addresses from a range of blocks on Base:
 ```bash
-node mm-extract.js base 1000-2000
+node infura-extract.js base 1000-2000
 ```
 
 Extract addresses from the latest block on Polygon:
 ```bash
-node mm-extract.js polygon max
+node infura-extract.js polygon max
 ```
 
 Extract addresses from a range ending at the latest block on Arbitrum:
 ```bash
-node mm-extract.js arbitrum 10000-max
+node infura-extract.js arbitrum 10000-max
 ```
 
 ## Output
@@ -80,7 +80,7 @@ The script outputs Ethereum addresses from block transactions to stdout, one add
 
 ## Caching
 
-The tool maintains a cache at `~/.cache/mm-extract/<network>/` to avoid redundant API calls. Each block is stored as a separate JSON file.
+The tool maintains a cache at `~/.cache/infura-extract/<network>/` to avoid redundant API calls. Each block is stored as a separate JSON file.
 
 ## Dependencies
 

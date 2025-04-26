@@ -42,7 +42,7 @@ const cacheDir = {
 // **Step 1: Parse command-line arguments for network and block range**
 const argv = process.argv;
 if (argv.length != 4) {
-    console.error('Usage: node mm-extract.js <network> <start-end> or <network> <single-block>');
+    console.error('Usage: node infura-extract.js <network> <start-end> or <network> <single-block>');
     console.error('Supported networks: ' + Object.keys(NETWORKS).join(', '));
     process.exit(1);
 }
@@ -58,7 +58,7 @@ if (!NETWORKS[network]) {
 }
 
 // Set up chain-specific cache directory
-const baseCacheDir = process.env.MM_CACHE_DIR || path.join(os.homedir(), '.cache', 'mm-extract');
+const baseCacheDir = process.env.MM_CACHE_DIR || path.join(os.homedir(), '.cache', 'infura-extract');
 const CACHE_DIR = path.join(baseCacheDir, network);
 
 // Display cache location info
