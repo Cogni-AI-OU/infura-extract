@@ -230,7 +230,17 @@ if (
 }
 
 // **Step 4: Implement caching for block data**
+const MAX_MEMCACHE_SIZE = 100 // Only keep a few blocks in memory
 const memCache = new Map()
+
+function setMemCache(key, value) {
+  if (memCache.size >= MAX_MEMCACHE_SIZE) {
+    // Remove oldest entry
+    const firstKey = memCache.keys().next().value
+    memCache.delete(firstKey)
+  }
+  memCache.set(key, value)
+}
 
 // **Step 5: Function to fetch block data with retry logic**
 async function getBlock(blockNumber) {
@@ -288,7 +298,7 @@ async function getBlock(blockNumber) {
         }).toString('utf8')
 
         const block = JSON.parse(decompressed, reviver)
-        memCache.set(blockNumber, block)
+        setMemCache(blockNumber, block)
         return block
       } catch (error) {
         debug(`Error reading compressed cache file: ${error.message}`)
@@ -302,7 +312,7 @@ async function getBlock(blockNumber) {
         debug(`Reading legacy cached data from disk for block ${blockNumber}`)
         const data = fs.readFileSync(legacyCacheFile, 'utf8')
         const block = JSON.parse(data, reviver)
-        memCache.set(blockNumber, block)
+        setMemCache(blockNumber, block)
         return block
       } catch (error) {
         debug(`Error reading legacy cache file: ${error.message}`)
@@ -324,7 +334,7 @@ async function getBlock(blockNumber) {
         )
 
         // Save to memory cache
-        memCache.set(blockNumber, block)
+        setMemCache(blockNumber, block)
 
         // Save to disk cache
         if (cacheDir.ready) {
