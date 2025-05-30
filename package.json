@@ -8,6 +8,7 @@
   ],
   "dependencies": {
     "@metamask/sdk": "^0.32.1",
+    "axios": "^1.9.0",
     "dotenv": "^16.5.0",
     "node-zstandard": "^1.2.4",
     "qr": "^0.4.2",
