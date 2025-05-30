@@ -31,28 +31,6 @@ const NETWORKS = {
 // Unsupported or non-EVM networks
 const UNSUPPORTED_NETWORKS = ['starknet', 'swellchain', 'unichain']
 
-// Define chain IDs for networks supported by Covalent
-const CHAIN_IDS = {
-  ethereum: 1,
-  polygon: 137,
-  base: 8453,
-  blast: 81457,
-  optimism: 10,
-  arbitrum: 42161,
-  palm: 11297108109,
-  avalanche: 43114,
-  celo: 42220,
-  zksync: 324,
-  bsc: 56,
-  mantle: 5000,
-  opbnb: 204,
-  scroll: 534352,
-  linea: null,
-  starknet: null,
-  swellchain: null,
-  unichain: null,
-}
-
 // Parse command-line arguments
 const argv = process.argv
 
@@ -70,16 +48,16 @@ const address = argv[2]
 
 // Load API keys from .env file
 const MM_API_KEY = process.env.MM_API_KEY
-const COVALENT_API_KEY = process.env.COVALENT_API_KEY
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY // Optional for Ethereum token data
 
 if (!MM_API_KEY) {
   console.error('MM_API_KEY not set in .env file')
   process.exit(1)
 }
 
-if (!COVALENT_API_KEY) {
+if (!ETHERSCAN_API_KEY) {
   console.warn(
-    'COVALENT_API_KEY not set. Only native balances will be shown for supported EVM networks.'
+    'ETHERSCAN_API_KEY not set. Token data for Ethereum will be skipped.'
   )
 }
 
@@ -103,23 +81,9 @@ async function getNativeBalance(address, web3, network) {
       )
       return balance
     } catch (error) {
-      // Enhanced error logging
-      const errorMessage = error.message || 'Unknown error'
-      const errorCode = error.code || 'No code'
-      const statusCode = error.statusCode || error.status || 'No status'
-
       console.error(
-        `[ERROR] Error fetching native balance for ${network} (attempt ${attempts + 1}):`
+        `[ERROR] Error fetching native balance for ${network} (attempt ${attempts + 1}): ${error.message}`
       )
-      console.error(`[ERROR] Message: ${errorMessage}`)
-      console.error(`[ERROR] Code: ${errorCode}`)
-      console.error(`[ERROR] Status: ${statusCode}`)
-
-      // Check for specific error conditions
-      if (statusCode === 429 || statusCode === 529) {
-        console.error(`[ERROR] Rate limit exceeded for ${network}`)
-      }
-
       attempts++
       if (attempts < 3) {
         const delay = 2000 * Math.pow(2, attempts)
@@ -134,55 +98,36 @@ async function getNativeBalance(address, web3, network) {
   return null
 }
 
-// Function to get balances from Covalent with retry logic
-async function getCovalentBalances(chainId, address) {
-  debug(
-    `Fetching balances from Covalent for address ${address} on chain ${chainId}`
-  )
-  let attempts = 0
-  const url = `https://api.covalenthq.com/v1/${chainId}/address/${address}/balances_v2/?key=${COVALENT_API_KEY}`
-
-  while (attempts < 3) {
-    try {
-      debug(`Sending GET request to Covalent API`)
-      const response = await axios.get(url, { timeout: 10000 })
-      if (response.status === 200) {
-        debug(`Successfully retrieved balances from Covalent`)
-        return response.data.data
-      } else {
-        throw new Error(
-          `Covalent API returned status ${response.status}: ${response.statusText}`
-        )
-      }
-    } catch (error) {
-      // Enhanced error logging for Covalent
-      const errorMessage = error.message || 'Unknown error'
-      const statusCode = error.response?.status || 'No status'
-      const statusText = error.response?.statusText || ''
-
-      console.error(
-        `[ERROR] Error fetching balances from Covalent (attempt ${attempts + 1}):`
-      )
-      console.error(`[ERROR] Message: ${errorMessage}`)
-      console.error(`[ERROR] Status: ${statusCode} ${statusText}`)
-
-      // Check for specific Covalent errors
-      if (statusCode === 401) {
-        console.error(`[ERROR] Authentication failed - check COVALENT_API_KEY`)
-      } else if (statusCode === 429) {
-        console.error(`[ERROR] Rate limit exceeded for Covalent API`)
-      }
-
-      attempts++
-      if (attempts < 3) {
-        const delay = 2000 * Math.pow(2, attempts)
-        debug(`Retrying in ${delay / 1000} seconds...`)
-        await new Promise((r) => setTimeout(r, delay))
-      }
-    }
+// Function to get ERC-20 token balances for Ethereum using Etherscan API
+async function getEthereumTokenBalances(address) {
+  if (!ETHERSCAN_API_KEY) {
+    console.warn(
+      'ETHERSCAN_API_KEY not set. Skipping token balances for Ethereum.'
+    )
+    return []
   }
-  console.error(`Failed to fetch balances from Covalent after 3 attempts.`)
-  return null
+  const url = `https://api.etherscan.io/api?module=account&action=tokenbalance&address=${address}&apikey=${ETHERSCAN_API_KEY}`
+  try {
+    const response = await axios.get(url)
+    if (response.data.status === '1') {
+      return response.data.result.map((token) => ({
+        contract_address: token.contractAddress,
+        name: token.tokenName,
+        symbol: token.tokenSymbol,
+        balance: formatBalance(token.balance, token.tokenDecimal),
+        decimals: token.tokenDecimal,
+        usd: null, // Etherscan doesn't provide USD value
+      }))
+    } else {
+      console.error(`Etherscan API error: ${response.data.message}`)
+      return []
+    }
+  } catch (error) {
+    console.error(
+      `Error fetching token balances from Etherscan: ${error.message}`
+    )
+    return []
+  }
 }
 
 // Function to format balance based on decimals
@@ -229,76 +174,13 @@ async function processNetworkBatch(networks) {
       )
     }
 
-    // Get ERC-20 and NFT data if Covalent API key is available
-    if (COVALENT_API_KEY && CHAIN_IDS[network]) {
+    // Get ERC-20 token data for Ethereum using Etherscan
+    if (network === 'ethereum' && ETHERSCAN_API_KEY) {
       try {
-        const covalentData = await getCovalentBalances(
-          CHAIN_IDS[network],
-          address
-        )
-        if (covalentData) {
-          let totalUsd = 0
-          for (const item of covalentData.items) {
-            const balance = item.balance
-            const quote = item.quote || 0
-            totalUsd += quote
-            if (
-              item.contract_address ===
-              '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
-            ) {
-              // Native token
-              const formattedBalance = formatBalance(
-                balance,
-                item.contract_decimals
-              )
-              output.native_balance = {
-                wei: balance,
-                formatted: formattedBalance,
-                usd: quote,
-              }
-            } else if (
-              item.supports_erc &&
-              item.supports_erc.includes('erc20')
-            ) {
-              // ERC-20 token
-              const formattedBalance = formatBalance(
-                balance,
-                item.contract_decimals
-              )
-              output.erc20_tokens.push({
-                contract_address: item.contract_address,
-                name: item.contract_name || 'Unknown',
-                symbol: item.contract_ticker_symbol || 'Unknown',
-                balance: formattedBalance,
-                decimals: item.contract_decimals,
-                usd: quote,
-              })
-            } else if (
-              item.supports_erc &&
-              (item.supports_erc.includes('erc721') ||
-                item.supports_erc.includes('erc1155'))
-            ) {
-              // NFTs
-              if (item.nft_data) {
-                for (const nft of item.nft_data) {
-                  output.nfts.push({
-                    contract_address: item.contract_address,
-                    name: item.contract_name || 'Unknown',
-                    symbol: item.contract_ticker_symbol || 'Unknown',
-                    token_id: nft.token_id,
-                    balance: nft.token_balance,
-                    usd: null,
-                  })
-                }
-              }
-            }
-          }
-          output.total_usd = totalUsd
-        }
+        const tokens = await getEthereumTokenBalances(address)
+        output.erc20_tokens = tokens
       } catch (error) {
-        console.error(
-          `Error getting Covalent data for ${network}: ${error.message}`
-        )
+        console.error(`Error getting token data for Ethereum: ${error.message}`)
       }
     }
 
@@ -359,12 +241,7 @@ async function main() {
       'Note: The estimated total USD value is based on available data and may not include all assets.'
     )
   } catch (error) {
-    // Enhanced main error handling
-    const errorMessage = error.message || 'Unknown error'
-    const errorStack = error.stack || 'No stack trace'
-
-    console.error(`[ERROR] Unexpected error: ${errorMessage}`)
-    console.error(`[ERROR] Stack: ${errorStack}`)
+    console.error(`Unexpected error: ${error.message}`)
     process.exit(1)
   }
 }
