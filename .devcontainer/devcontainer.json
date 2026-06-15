@@ -28,7 +28,7 @@
   // Features to add to the dev container. More info: https://containers.dev/features.
   "features": {
     "ghcr.io/devcontainers-extra/features/pipx-package:1": {},
-    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/node:2": {},
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/guiyomh/features/vim:0": {},
     "ghcr.io/jungaretti/features/ripgrep:1": {}
